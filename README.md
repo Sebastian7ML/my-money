@@ -185,9 +185,9 @@ Before we build any user interface, we need to know what data we're displaying. 
     import { Account, Category, Transaction } from '@/types';
 
     export const mockAccounts: Account[] = [
-      { id: 'acc_1', name: 'Main Checking', balance: 125450 }, // $1,254.50
-      { id: 'acc_2', name: 'Savings', balance: 500000 }, // $5,000.00
-      { id: 'acc_3', name: 'Visa Credit Card', balance: -25120 }, // -$251.20
+      { id: 'acc_1', name: 'Main Checking', balance: 125450 }, // €1,254.50
+      { id: 'acc_2', name: 'Savings', balance: 500000 }, // €5,000.00
+      { id: 'acc_3', name: 'Visa Credit Card', balance: -25120 }, // -€251.20
     ];
 
     export const mockCategories: Category[] = [
@@ -252,13 +252,13 @@ Let's create the core of our application: the dashboard. Our goal for this step 
     /**
      * Formats a number of cents into a currency string.
      * @param amountInCents The amount in cents (e.g., 125450).
-     * @returns A formatted string (e.g., "$1,254.50").
+     * @returns A formatted string (e.g., "1.254,50 €").
      */
     export function formatCurrency(amountInCents: number): string {
       const dollars = amountInCents / 100;
-      return new Intl.NumberFormat('en-US', {
+      return new Intl.NumberFormat('de-DE', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'EUR',
       }).format(dollars);
     }
     ```
@@ -759,7 +759,7 @@ We will create a new page with a form. This form will be our first **Client Comp
           </div>
 
           <div>
-            <label htmlFor="amount" className="block text-sm font-medium text-slate-700">Amount ($)</label>
+            <label htmlFor="amount" className="block text-sm font-medium text-slate-700">Amount (€)</label>
             <input
               type="number"
               id="amount"

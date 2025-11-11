@@ -47,7 +47,7 @@ export function TransactionForm() {
       </div>
 
       <div>
-        <label htmlFor="amount" className="block text-sm font-medium text-slate-700">Amount ($)</label>
+        <label htmlFor="amount" className="block text-sm font-medium text-slate-700">Amount (€)</label>
         <input
           type="number"
           id="amount"
