@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { mockAccounts, mockCategories } from '@/lib/mock-data';
+import { createTransaction } from '@/lib/actions';
 
 export function TransactionForm() {
   const router = useRouter();
@@ -12,27 +13,64 @@ export function TransactionForm() {
     accountId: mockAccounts[0].id, // Default to the first account
     categoryId: mockCategories[0].id, // Default to the first category
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null); // Clear error when user makes a change
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // For now, we'll just log the data and go back to the dashboard.
-    // In a real app, this is where you would send the data to an API.
-    console.log('New Transaction:', {
-      ...formData,
-      amount: parseInt(formData.amount) * 100, // Convert dollars to cents
-    });
-
-    // Redirect back to the dashboard after submission
-    router.push('/');
+    setIsLoading(true);
+    setError(null);
+    
+    // Validate amount is not empty or zero
+    const amount = parseFloat(formData.amount);
+    if (!formData.description.trim()) {
+      setError('Description is required');
+      setIsLoading(false);
+      return;
+    }
+    if (isNaN(amount) || amount === 0) {
+      setError('Amount must be a valid number greater than 0');
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      // Convert amount to cents
+      const amountInCents = Math.round(amount * 100);
+      
+      // Call server action
+      const result = await createTransaction({
+        description: formData.description,
+        amount: amountInCents,
+        accountId: formData.accountId,
+        categoryId: formData.categoryId,
+      });
+      
+      if (result) {
+        // Redirect back to the dashboard after successful submission
+        router.push('/');
+      }
+    } catch (err) {
+      console.error('Error adding transaction:', err);
+      setError('An error occurred while adding the transaction. Please try again.');
+      setIsLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="rounded-md bg-red-50 p-4">
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
       <div>
         <label htmlFor="description" className="block text-sm font-medium text-slate-700">Description</label>
         <input
@@ -41,8 +79,9 @@ export function TransactionForm() {
           name="description"
           value={formData.description}
           onChange={handleChange}
+          disabled={isLoading}
           required
-          className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+          className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500"
         />
       </div>
 
@@ -54,10 +93,11 @@ export function TransactionForm() {
           name="amount"
           value={formData.amount}
           onChange={handleChange}
+          disabled={isLoading}
           required
           step="0.01"
           placeholder="e.g., 25.50"
-          className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+          className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500"
         />
       </div>
 
@@ -68,7 +108,8 @@ export function TransactionForm() {
           name="accountId"
           value={formData.accountId}
           onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+          disabled={isLoading}
+          className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500"
         >
           {mockAccounts.map(account => (
             <option key={account.id} value={account.id}>{account.name}</option>
@@ -83,7 +124,8 @@ export function TransactionForm() {
           name="categoryId"
           value={formData.categoryId}
           onChange={handleChange}
-          className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm"
+          disabled={isLoading}
+          className="mt-1 block w-full px-3 py-2 bg-white border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-sky-500 focus:border-sky-500 sm:text-sm disabled:bg-slate-100 disabled:text-slate-500"
         >
           {mockCategories.map(category => (
             <option key={category.id} value={category.id}>{category.name}</option>
@@ -94,9 +136,10 @@ export function TransactionForm() {
       <div>
         <button
           type="submit"
-          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500"
+          disabled={isLoading}
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-sky-500 disabled:bg-sky-400 disabled:cursor-not-allowed"
         >
-          Add Transaction
+          {isLoading ? 'Adding...' : 'Add Transaction'}
         </button>
       </div>
     </form>
