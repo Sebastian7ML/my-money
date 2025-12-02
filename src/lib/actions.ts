@@ -2,6 +2,7 @@
 
 import { Transaction } from '@/types';
 import { addTransaction, updateAccountBalance, ensureStoresInitialized } from './data';
+import { mockCategories } from './mock-data';
 
 /**
  * Server action to add a new transaction
@@ -40,14 +41,21 @@ export async function updateTransaction(
         
         // Revert the old transaction's effect on the account balance
         await updateAccountBalance(oldTransaction.accountId, -oldTransaction.amount);
-        
+
+        // Determine sign for the new amount based on the category type
+        const category = mockCategories.find(c => c.id === transactionData.categoryId);
+        const signedNewAmount = category && category.type === 'expense'
+          ? -Math.abs(transactionData.amount)
+          : Math.abs(transactionData.amount);
+
         // Apply the new transaction's effect on the account balance
-        await updateAccountBalance(transactionData.accountId, transactionData.amount);
-        
-        // Update the transaction
+        await updateAccountBalance(transactionData.accountId, signedNewAmount);
+
+        // Update the transaction (store signed amount)
         global.transactionsStore[index] = {
           ...global.transactionsStore[index],
           ...transactionData,
+          amount: signedNewAmount,
         };
         
         return global.transactionsStore[index];

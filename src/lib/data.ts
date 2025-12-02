@@ -1,5 +1,5 @@
 import { Account, Transaction } from '@/types';
-import { mockAccounts, mockTransactions } from './mock-data';
+import { mockAccounts, mockTransactions, mockCategories } from './mock-data';
 
 // A helper function to simulate network delay
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -87,8 +87,15 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'date
   
   ensureStoresInitialized();
   // Create a new transaction with ID and current date
+  // Normalize amount sign based on the category type (expenses should be negative)
+  const category = mockCategories.find(c => c.id === transaction.categoryId);
+  const signedAmount = category && category.type === 'expense'
+    ? -Math.abs(transaction.amount)
+    : Math.abs(transaction.amount);
+
   const newTransaction: Transaction = {
     ...transaction,
+    amount: signedAmount,
     id: `txn_${Date.now()}`, // Simple unique ID based on timestamp
     date: new Date().toISOString(), // Current date in ISO format
   };
@@ -98,7 +105,7 @@ export async function addTransaction(transaction: Omit<Transaction, 'id' | 'date
     global.transactionsStore.unshift(newTransaction); // Add to the beginning of the array
     
     // Update the account balance
-    await updateAccountBalance(transaction.accountId, transaction.amount);
+    await updateAccountBalance(transaction.accountId, signedAmount);
   }
   
   return newTransaction;
