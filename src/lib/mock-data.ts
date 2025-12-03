@@ -4,6 +4,7 @@ export const mockAccounts: Account[] = [
   { id: 'acc_1', name: 'Main Checking', balance: 125450 }, // €1,254.50
   { id: 'acc_2', name: 'Savings', balance: 500000 }, // €5,000.00
   { id: 'acc_3', name: 'Visa Credit Card', balance: -25120 }, // -€251.20
+  { id: 'acc_4', name: 'Master Credit Card', balance: -100000 }, // -€1,000.00 
 ];
 
 export const mockCategories: Category[] = [
